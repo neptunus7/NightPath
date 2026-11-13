@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {zoomLightStyle,metersPerPixel,binVisibleLights} from '../nowon/light_canvas.mjs';
+assert.ok(zoomLightStyle(12).core < zoomLightStyle(15).core);
+assert.ok(zoomLightStyle(15).core < zoomLightStyle(18).core);
+assert.ok(zoomLightStyle(12).haze && zoomLightStyle(12).glow > zoomLightStyle(17).glow, "distant view uses wide diffuse haze, not fat dots");
+assert.ok(metersPerPixel(37.65,15) > metersPerPixel(37.65,17));
+const nearby=[{lat:37.65,lon:127.07,category:'ngii_street',x:15,y:20},{lat:37.65,lon:127.07,category:'ngii_security',x:17,y:21},{lat:37.65,lon:127.07,category:'ngii_security',x:100,y:130}];
+assert.equal(binVisibleLights(nearby,12).length,2, 'distant view bins crowded pixels');
+assert.equal(binVisibleLights(nearby,15).length,3, 'zoomed-in view preserves distinct records');
+console.log('PASS zoom-scaled dots, zoom-out density binning, measured-radius conversion');

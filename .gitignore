@@ -1,0 +1,58 @@
+# For the public source-only repository. Git ignore is not a permission grant.
+# GitHub web upload / git -f / tracked history can bypass these patterns.
+*.log
+*.zip
+*.7z
+*.tar
+*.gz
+*.rar
+*.xlsx
+*.xls
+*.csv
+*.geojson
+*.gpkg
+*.shp
+*.shx
+*.dbf
+*.prj
+*.gpx
+*.kml
+*.osm
+*.pbf
+*.mbtiles
+*.pmtiles
+*.sqlite
+*.tif
+*.tiff
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+__pycache__/
+.pytest_cache/
+node_modules/
+.DS_Store
+Thumbs.db
+# Absolute deny for source-derived geospatial data (even if openly downloadable)
+/nowon/data/*
+!/nowon/data/.gitkeep
+/docs/*.json
+/docs/**/ACTUAL_OSM*
+/src/
+/versions/
+# Credentials and third-party SDK setup
+/src/config.local.js
+/index.local.html
+# Local model output or copied archives
+/private/
+/local_data/
+/raw_data/
+/screenshots/

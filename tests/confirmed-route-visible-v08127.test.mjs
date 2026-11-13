@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const app=fs.readFileSync(new URL('../nowon/app.mjs',import.meta.url),'utf8');
+const confirm=app.split('      function confirmChoice(){')[1]?.split('      selectChoice(0);')[0];
+assert.ok(confirm,'confirmation handler found');
+assert.match(confirm,/const route=routes\[selectedIndex\];/);
+assert.match(confirm,/drawRoute\(route\);/,'selected route must be drawn on confirmation');
+assert.doesNotMatch(confirm,/routeLayer\.clearLayers\(\)/,'confirmation must not erase selected route');
+assert.doesNotMatch(confirm,/drawRoute\(route,null,null,routes\)/,'confirmation must not draw other routes');
+assert.match(confirm,/cancel-route-selection.*?onclick=.*?selectChoice\(selectedIndex\)/,'cancel restores the alternatives');
+assert.match(app,/function clearRecommendedRoute\(\)\{\s*routeLayer\.clearLayers\(\)/,'only clear-route flow removes it');
+assert.match(app,/\$\('close-results'\)\.onclick=\(\)=>\{\$\('results'\)\.hidden=true;/,'X only closes results pane');
+assert.match(app,/function drawRoute\(route,shortest=null,marker=null,alternatives=\[\]\)\{[\s\S]*?state\.activeRoute=route;/);
+console.log('PASS v0.8.12.7: selected route remains on map until explicit clear-route');
