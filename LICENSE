@@ -22,4 +22,4 @@ SOFTWARE.
 
 NOTE: This MIT license applies to original application code and documentation
 only. Public datasets, OSM-derived geometry (ODbL), Leaflet, and map tiles have
-separate licenses and terms. See docs/DATA_SOURCES.md.
+separate licenses and terms. See docs/DATA_POLICY.md and docs/PAGES_DATA_LICENSE.md.
