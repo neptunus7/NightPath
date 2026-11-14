@@ -4,7 +4,7 @@ import vm from 'node:vm';
 const app=fs.readFileSync(new URL('../nowon/app.mjs', import.meta.url),'utf8');
 const html=fs.readFileSync(new URL('../nowon/index.html', import.meta.url),'utf8');
 const css=fs.readFileSync(new URL('../nowon/style.css', import.meta.url),'utf8');
-assert.match(html,/BETA 0\.8\.12\.9/);
+assert.match(html,/BETA 0\.8\.13\.0/);
 assert.match(app,/function previewStoreChoice\(index\)/);
 assert.match(app,/function confirmStoreChoice\(\)/);
 assert.match(app,/function confirmStoreChoice\(\)\{[\s\S]*?drawRoute\(c\.route,null,c\)/);
@@ -15,7 +15,7 @@ assert.match(app,/function clearRecommendedRoute\(\)\{\s*routeLayer\.clearLayers
 assert.match(app,/function confirmChoice\(\)\{[\s\S]*?drawRoute\(route\);/);
 assert.match(app,/\$\('close-results'\)\.onclick=\(\)=>\{\$\('results'\)\.hidden=true;/);
 const begin=app.indexOf('      const display=pickStoreRecommendations(candidates,8,2);');
-const end=app.indexOf('\n    }\n  }catch(e)', begin);
+const end=app.indexOf("\n    }else if(state.mode==='destination'){", begin);
 assert.ok(begin>=0 && end>begin,'store interaction code found');
 const storeCode=app.slice(begin,end);
 const nodes={};

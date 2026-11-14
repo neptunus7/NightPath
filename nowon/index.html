@@ -1,22 +1,29 @@
 <!DOCTYPE html>
 <html lang="ko"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>NIGHTPATH — 밤에도, 내 길은 빛나도록 · v0.8.12.9</title>
+<title>NIGHTPATH — 밤에도, 내 길은 빛나도록 · v0.8.13.0</title>
 <link crossorigin="anonymous" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet"/>
 <link href="./style.css" rel="stylesheet"/></head>
 <body><div class="layout"><!-- PUBLIC SOURCE-ONLY EDITION: contains no NGII/OSM source-derived dataset or derived coordinates. Do not deploy as a fully functioning live map. -->
 <aside class="sidebar">
 <header>
-<div class="brand-lockup"><div aria-hidden="true" class="brand-symbol">☾<span>✦</span></div><div class="brand-wordmark"><div class="logo">NIGHT<span>PATH</span></div><div class="sub">NIGHT ROUTE STUDIO</div></div><span class="version-chip">BETA 0.8.12.9</span></div>
+<div class="brand-lockup"><div aria-hidden="true" class="brand-symbol">☾<span>✦</span></div><div class="brand-wordmark"><div class="logo">NIGHT<span>PATH</span></div><div class="sub">NIGHT ROUTE STUDIO</div></div><span class="version-chip">BETA 0.8.13.0</span></div>
 </header>
 <div role="note" style="padding:12px 16px;border:1px solid #a56b25;border-radius:10px;background:#271f18;color:#f8d9aa;font-size:12px;line-height:1.65;margin:9px 0 12px;">📦 <strong>공개 코드 검토판</strong> · 조명·OSM·안심시설 원본/가공 좌표를 포함하지 않습니다. 완전한 실제 지도 시연용이 아니며 데이터 부재 오류가 정상입니다.</div>
 <div aria-label="NIGHTPATH 소개" class="hero-night"><span class="hero-kicker"><span class="hero-star">✦</span> 밤의 이동을 조금 더 편안하게</span><h1>밤에도,<br/><em>내 길은 빛나도록.</em></h1><p>그냥 걷고 싶은 밤부터<br/>꼭 걸어야 하는 밤까지.</p><span aria-hidden="true" class="hero-moon">☾</span><span aria-hidden="true" class="hero-spark hero-spark-one">✧</span><span aria-hidden="true" class="hero-spark hero-spark-two">✦</span></div>
 
 <details class="notice research-notice"><summary>분석 안내 · 실제 밝기·보행 안전 보장 아님</summary><p>국토지리정보원 수치지도·IoT 기기 위치를 바탕으로 추정한 <em>조명시설 접근성</em>을 표시합니다. 실제 조도·점등·보행 안전을 보증하지 않습니다. <strong>내장된 임시 도로중심선은 보행로가 아니며 실외 길안내로 사용하면 안 됩니다.</strong></p></details>
-<section class="section-card route-card"><h2><span class="section-index">01</span> 밤의 목적</h2><p class="section-lead">어떤 밤이든, 길을 선택할 수 있도록.</p><div class="tabs" role="tablist"><button class="active" id="tab-loop" type="button">☾ 산책 코스</button><button id="tab-shop" type="button">⌁ 편의점 경로</button></div>
+<section class="section-card route-card"><h2><span class="section-index">01</span> 밤의 목적</h2><p class="section-lead">어떤 밤이든, 길을 선택할 수 있도록.</p><div class="tabs" role="tablist"><button class="active" id="tab-loop" type="button">☾ 산책 코스</button><button id="tab-shop" type="button">⌁ 편의점 경로</button><button id="tab-destination" type="button">⌖ 자유 도착지</button></div>
 <div id="loop-panel"><label for="route-strategy">경로 추천 방식</label><select class="light-select" id="route-strategy"><option value="bright">💪 최광루트 · 조명시설 근접도 우선</option><option value="support">🛡 안심 인프라 참고형 · 2022년 기록 기반</option></select><p class="muted">최광루트는 조명시설 근접도를 우선합니다. 안심 인프라 참고형은 2022년 지정 안심귀갓길 및 CCTV·안심벨·112 안내 기록을 함께 고려합니다. 어느 모드도 실제 안전을 보장하지 않습니다.</p>
 <label class="check"><input checked="" id="urban-only" type="checkbox"/> 도심 산책 우선 <small>기본 ON</small></label>
 <p class="muted">OSM 태그에서 확인되는 비포장·산길·계단·급경사·lit=no 일부 경로를 제한합니다. 태그가 없거나 틀리면 산지 경로가 남을 수 있으며 야간 안전을 보증하지 않습니다.</p><label for="duration">원하는 산책 시간</label><div class="times" id="times"><button data-min="15" type="button">15분</button><button class="active" data-min="30" type="button">30분</button><button data-min="45" type="button">45분</button><button data-min="60" type="button">60분</button></div><div class="duration-editor"><div class="duration-top"><strong>세밀한 시간 선택</strong><output for="duration" id="duration-current">30분</output></div><input aria-label="산책 시간 5분에서 60분까지 1분 단위 조절" id="duration" max="60" min="5" step="1" type="range" value="30"/><div class="duration-range"><span>5분</span><span>60분</span></div><label for="duration-number">직접 입력 (1분 단위)</label><div class="duration-input"><input id="duration-number" max="60" min="5" step="1" type="number" value="30"/><span>분 · 슬라이더 위 마우스 휠도 지원</span></div></div><p class="muted">빠른 선택은 기존대로 유지하며, 5~60분을 1분 간격으로 조절할 수 있습니다. 예상 시간은 실제 걸음과 다를 수 있습니다. 출발점으로 돌아오는 경로를 우선 찾습니다. 걷는 속도는 4km/h 가정입니다.</p></div>
 <div hidden="" id="shop-panel"><p class="muted">OSM 편의점 위치를 이용합니다. 파란빛은 전체 24시간 영업을 가정한 <b>시연용</b> 표시이며 실제 영업 여부가 확인된 것은 아닙니다.</p><details class="shop-hours-editor"><summary>⌁ 편의점 영업시간 수동 확인 · 빛 예시 설정</summary><p class="muted">네이버/카카오 지도 등에서 검색해 사실 여부를 확인할 수 있지만, 타 서비스 정보를 저장·가공·공개하려면 해당 조건을 먼저 확인해야 합니다. 자동 수집하지 않으며 모든 입력은 임시 시각화에만 사용합니다.</p><label for="shop-hours-store">편의점 선택</label><select id="shop-hours-store" class="light-select"><option value="">OSM 편의점 로딩 중…</option></select><div class="shop-hours-search"><a id="shop-naver-search" rel="noopener noreferrer" target="_blank" href="https://map.naver.com/">네이버 지도에서 확인</a><a id="shop-kakao-search" rel="noopener noreferrer" target="_blank" href="https://map.kakao.com/">카카오 지도에서 확인</a></div><label for="shop-hours-type">직접 확인한 영업시간</label><select class="light-select" id="shop-hours-type"><option value="unknown">미확인 (기본)</option><option value="247">24시간 표기 확인</option><option value="daily">매일 같은 시간 (시험용)</option></select><label for="shop-hours-range">매일 영업시간 (예: 19:00-03:00)</label><input type="text" id="shop-hours-range" value="19:00-03:00" placeholder="HH:MM-HH:MM" maxlength="11"/><button type="button" class="subbtn" id="save-shop-hours">이 실행에서만 임시 적용</button><p class="muted" id="shop-hours-status">시연 모드에서는 모든 OSM 편의점을 24시간으로 가정합니다. 실제 영업정보는 미확인입니다.</p></details></div>
+<div hidden id="destination-panel" class="destination-panel">
+  <p class="muted">출발 위치는 기존 설정을 사용해요. 지도를 클릭해 원하는 도착지를 찍으면 <b>거리 우선</b>과 <b>조명 근접도 우선</b> 두 경로를 비교합니다.</p>
+  <button class="destination-pick" id="pick-destination" type="button">⌖ 지도에서 도착지 지정</button>
+  <div class="destination-readout" id="destination-status" role="status">아직 지정한 도착지가 없습니다.</div>
+  <button class="destination-reset" id="reset-destination" type="button">도착지 초기화</button>
+  <p class="muted">연구 범위 주변의 OSM 보행 후보망에 연결되는 위치만 탐색합니다. 최대 35% 우회를 허용하는 조명 근접도 모델이며, 실제 밝기·통행 가능·안전성을 보장하지 않습니다. 실제 도착점과 도로망의 마지막 노드 사이에는 차이가 있을 수 있습니다.</p>
+</div>
 <button class="cta" disabled="" id="recommend" type="button">✦ 산책 코스 추천받기</button>
 <button class="subbtn" id="clear-route" type="button">경로 지우기</button>
 </section>

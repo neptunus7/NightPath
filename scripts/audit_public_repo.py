@@ -6,7 +6,7 @@ from pathlib import Path
 import re,sys
 ROOT=Path(__file__).resolve().parents[1]
 ALLOWED_ROOT={'.gitignore','LICENSE','README.md','CHANGELOG.md'}
-ALLOWED_NOWON={'index.html','app.mjs','routing.mjs','light_canvas.mjs','store_hours.mjs','store_recommendations.mjs','style.css'}
+ALLOWED_NOWON={'index.html','app.mjs','routing.mjs','light_canvas.mjs','store_hours.mjs','store_recommendations.mjs','free_destination.mjs','style.css'}
 ALLOWED_PREP={'analyze_ngii_2025.py','build_ngii_road_fallback.py','download_osm.py','osm_fetch.py','osm_xml.py','serve_nowon.py'}
 ALLOWED_TESTS={
 'confirmed-route-visible-v08127.test.mjs',
@@ -14,11 +14,13 @@ ALLOWED_TESTS={
 'nowon-alternatives.test.mjs','nowon-night-glow.test.mjs','nowon-routing.test.mjs',
 'nowon-urban-filter.test.mjs','results-sticky-featured-v08129.test.mjs',
 'store-hours-visual.test.mjs','store-route-confirm-v08128.test.mjs',
+'free-destination-v08130.test.mjs','free-destination-ui-v08130.test.mjs',
 'test_nowon_local_server.py','test_osm_xml.py'}
 ALLOWED_DOCS={'BENCHMARK_v0.8.11.md','BUGFIX_LIGHT_TILE_v0.8.12.1.md',
 'BUGFIX_SELECTED_ROUTE_v0.8.12.7.md','SHOP_RECOMMENDATION_RULES_v0.8.12.6.md',
 'PROJECT_STORY.md','METHOD_AND_LIMITATIONS.md','DATA_POLICY.md',
-'THIRD_PARTY_NOTICES.md','PUBLISH_CHECKLIST.md','TESTS.md'}
+'THIRD_PARTY_NOTICES.md','PUBLISH_CHECKLIST.md','TESTS.md',
+'FREE_DESTINATION_v0.8.13.0.md'}
 EXPECTED=(ALLOWED_ROOT|{'nowon/'+x for x in ALLOWED_NOWON}|
 {'nowon/data_prep/'+x for x in ALLOWED_PREP}|
 {'tests/'+x for x in ALLOWED_TESTS}|

@@ -2,6 +2,7 @@ import {buildGraph,nearestNode,brightestWithinDetour,recommendLoop,recommendLoop
 import {createNightLightsLayer} from './light_canvas.mjs';
 import {parseDailyRange,showShopLightAt} from './store_hours.mjs';
 import {pickStoreRecommendations} from './store_recommendations.mjs';
+import {computeDestinationRoutes} from './free_destination.mjs';
 const $=id=>document.getElementById(id);
 const CENTER=[37.650555110483,127.07420038053];
 const map=L.map('map',{zoomControl:false,preferCanvas:true}).setView(CENTER,15);
@@ -24,10 +25,10 @@ function setBasemapTheme(dark){
 }
 setBasemapTheme(true);
 document.getElementById('toggle-map-theme')?.addEventListener('click',()=>setBasemapTheme(!darkBasemap));
-const state={routeStrategy:'bright',urbanOnly:true,osmLoading:false,osmReady:false,rawLights:[],ngiiLights:[],ngiiCoverage:null,extraLights:[],osmLights:[],elements:null,shops:[],graph:null,roadSourceType:null,start:CENTER,mode:'loop',mins:30,pick:false,lightProfile:'normal',routeChoices:[],activeRoute:null,safetyReference:null,shopHours:new Map()};
+const state={routeStrategy:'bright',urbanOnly:true,osmLoading:false,osmReady:false,rawLights:[],ngiiLights:[],ngiiCoverage:null,extraLights:[],osmLights:[],elements:null,shops:[],graph:null,roadSourceType:null,start:CENTER,mode:'loop',mins:30,pick:false,destinationPick:false,destination:null,lightProfile:'normal',routeChoices:[],activeRoute:null,safetyReference:null,shopHours:new Map()};
 // Draw routes below the lamp glow. Keep the start/destination markers in Leaflet's marker pane.
 const routePane=map.createPane('nightpathRoutePane');routePane.style.zIndex='330';routePane.style.pointerEvents='none';
-const lampLayer=createNightLightsLayer(L,map),twinkleLayer=L.layerGroup().addTo(map),coverageLayer=L.layerGroup().addTo(map),supportLayer=L.layerGroup().addTo(map),routeLayer=L.layerGroup().addTo(map),startLayer=L.layerGroup().addTo(map);
+const lampLayer=createNightLightsLayer(L,map),twinkleLayer=L.layerGroup().addTo(map),coverageLayer=L.layerGroup().addTo(map),supportLayer=L.layerGroup().addTo(map),routeLayer=L.layerGroup().addTo(map),startLayer=L.layerGroup().addTo(map),destinationLayer=L.layerGroup();
 // Stable reference scope. The visual circle does NOT mean every segment has complete source coverage.
 L.circle(CENTER,{radius:1000,color:'#41dec0',weight:1.5,dashArray:'7 7',opacity:.85,fillColor:'#41dec0',fillOpacity:.02,interactive:false}).addTo(map);
 
@@ -187,11 +188,25 @@ async function loadSupportReference(){
 function showStart(){
   startLayer.clearLayers();
   const markerIcon=L.divIcon({className:'nightpath-start-marker-container',html:'<span class="nightpath-start-marker" aria-hidden="true"><span class="start-moon">☾</span><span class="start-spark">✦</span></span>',iconSize:[38,45],iconAnchor:[19,42],popupAnchor:[0,-38]});
-  L.marker(state.start,{icon:markerIcon,zIndexOffset:750}).addTo(startLayer).bindPopup('☾ 이곳에서 밤 산책 출발! · 위치는 지도를 클릭해 변경할 수 있어요.');
+  L.marker(state.start,{icon:markerIcon,zIndexOffset:750}).addTo(startLayer).bindPopup('☾ 경로 출발 위치 · 출발 위치 설정에서 변경할 수 있어요.');
   $('start-status').textContent=`${state.start[0].toFixed(4)}, ${state.start[1].toFixed(4)} · 지도 클릭으로 변경`;
 }
-function selectTab(mode){state.mode=mode;$('tab-loop').classList.toggle('active',mode==='loop');$('tab-shop').classList.toggle('active',mode==='shop');$('loop-panel').hidden=mode!=='loop';$('shop-panel').hidden=mode!=='shop';$('recommend').textContent=mode==='loop'?'✦ 산책 코스 추천받기':'⌁ 주변 편의점 경로 찾기';}
-$('tab-loop').onclick=()=>selectTab('loop');$('tab-shop').onclick=()=>selectTab('shop');
+function showDestination(){
+  destinationLayer.clearLayers();
+  if(!state.destination){$('destination-status').textContent='아직 지정한 도착지가 없습니다.';return;}
+  const [lat,lon]=state.destination;
+  $('destination-status').textContent=`선택한 도착지: ${lat.toFixed(5)}, ${lon.toFixed(5)} · 지도에서 다시 지정 가능`;
+  const icon=L.divIcon({className:'nightpath-free-destination-wrap',html:'<span class="nightpath-free-destination" aria-hidden="true">⌖</span>',iconSize:[32,38],iconAnchor:[16,35]});
+  L.marker([lat,lon],{icon,zIndexOffset:720}).addTo(destinationLayer).bindPopup('⌖ 내가 지정한 도착지 · 실제 도로망 마지막 노드와 거리가 있을 수 있습니다.');
+}
+function selectTab(mode){
+  state.mode=mode;state.pick=false;state.destinationPick=false;
+  for(const kind of ['loop','shop','destination'])$('tab-'+kind).classList.toggle('active',mode===kind);
+  $('loop-panel').hidden=mode!=='loop';$('shop-panel').hidden=mode!=='shop';$('destination-panel').hidden=mode!=='destination';
+  $('recommend').textContent=mode==='loop'?'✦ 산책 코스 추천받기':mode==='shop'?'⌁ 주변 편의점 경로 찾기':'⌖ 도착지 경로 비교하기';
+  if(mode==='destination'){if(!map.hasLayer(destinationLayer))destinationLayer.addTo(map);}else if(map.hasLayer(destinationLayer))map.removeLayer(destinationLayer);
+}
+$('tab-loop').onclick=()=>selectTab('loop');$('tab-shop').onclick=()=>selectTab('shop');$('tab-destination').onclick=()=>selectTab('destination');
 function clearRecommendedRoute(){
   routeLayer.clearLayers();state.activeRoute=null;state.routeChoices=[];
   $('results').hidden=true;setResultCollapsed(false);renderLights();
@@ -210,10 +225,19 @@ $('duration-number').onchange=e=>setMinutes(e.target.value);
 // page scroll on that control, not globally.
 $('duration').addEventListener('wheel',e=>{e.preventDefault();setMinutes(state.mins+(e.deltaY<0?1:-1));},{passive:false});
 setMinutes(30);
-$('pick-start').onclick=()=>{state.pick=true;$('map-start-panel').open=false;status('☾ 지도에서 출발 위치를 클릭하세요.');};
+$('pick-start').onclick=()=>{state.pick=true;state.destinationPick=false;$('map-start-panel').open=false;status('☾ 지도에서 출발 위치를 클릭하세요.');};
 $('reset-start').onclick=()=>{state.pick=false;state.start=CENTER;showStart();clearRecommendedRoute();map.panTo(CENTER);};
 $('go-start').onclick=()=>{map.flyTo(state.start,Math.max(16,map.getZoom()),{duration:.65});$('map-start-panel').open=false;};
-map.on('click',e=>{if(!state.pick)return;state.start=[e.latlng.lat,e.latlng.lng];state.pick=false;showStart();clearRecommendedRoute();status('출발점 변경 완료. 경로를 다시 추천할 수 있어요.');});
+$('pick-destination').onclick=()=>{selectTab('destination');state.destinationPick=true;status('⌖ 지도에서 원하는 도착지를 한 번 클릭하세요.');};
+$('reset-destination').onclick=()=>{state.destinationPick=false;state.destination=null;showDestination();clearRecommendedRoute();status('도착지 지정이 초기화됐어요.');};
+map.on('click',e=>{
+  if(state.pick){state.start=[e.latlng.lat,e.latlng.lng];state.pick=false;showStart();clearRecommendedRoute();status('출발점 변경 완료. 경로를 다시 추천할 수 있어요.');return;}
+  if(state.destinationPick){
+    const destination=[e.latlng.lat,e.latlng.lng];
+    if(distanceMeters(CENTER,destination)>1200){showError('연구 기준점에서 1.2km 밖입니다. 현재 확보한 보행망을 기준으로 중심 근처에서 도착지를 지정해 주세요.');return;}
+    state.destination=destination;state.destinationPick=false;showDestination();clearRecommendedRoute();status('도착지 설정 완료. 「도착지 경로 비교하기」를 눌러 주세요.');
+  }
+});
 $('clear-route').onclick=clearRecommendedRoute;
 function setResultCollapsed(collapsed){
   $('results').classList.toggle('is-collapsed',collapsed);
@@ -334,7 +358,7 @@ async function recommend(){
       }
       selectChoice(0);
       status((state.routeStrategy==='bright'?'최광루트':state.routeStrategy==='support'?'안심 인프라 참고형':'균형형')+' 계산 완료 · 실제 밝기/안전성 실측 아님');
-    }else{
+    }else if(state.mode==='shop'){
       if(state.roadSourceType==='ngii')throw new Error('오프라인 수치지도에는 편의점 위치 정보가 포함되지 않습니다. OSM 보행망·편의점 온라인 새로고침에 성공한 후 이용하세요. 가상의 편의점을 생성하지는 않습니다.');
       const candidates=recommendStores(state.graph,start,state.shops);
       if(!candidates.length)throw new Error('이 범위에서 OSM 편의점을 찾지 못했거나, 보행망과 연결되지 않았습니다. 자료 부족일 수 있습니다.');
@@ -376,6 +400,45 @@ async function recommend(){
       }
       previewStoreChoice(0);
       status(`편의점 ${candidates.length}곳 후보 경로 비교 완료`);
+    }else if(state.mode==='destination'){
+      if(!state.destination)throw new Error('먼저 「지도에서 도착지 지정」을 눌러 목적지를 선택해 주세요.');
+      if(state.roadSourceType==='ngii')throw new Error('현재 도로망은 보행 검증이 없는 NGII 자동차 도로중심선입니다. 자유 목적지 경로는 OSM 보행망이 준비된 뒤 이용해 주세요.');
+      const comparison=computeDestinationRoutes(state.graph,state.start,state.destination);
+      state.routeChoices=[comparison.shortest,comparison.bright];
+      let selectedIndex=comparison.samePath?0:1;
+      function destinationStats(route){
+        const detour=Math.max(0,route.distance-comparison.shortest.distance);
+        return `<div class="result-spotlight"><span class="result-eyebrow">도착지까지 예상 도보 시간</span><div class="result-number">${route.minutes.toFixed(1)}<small>분</small></div><span class="result-unit">시속 4km 가정 · 보행 실측값 아님</span></div>`+
+          `<div class="metric-grid"><div class="metric-card"><span>이동 거리</span><strong>${round(route.distance).toLocaleString()}<small>m</small></strong></div><div class="metric-card"><span>조명시설 근접</span><strong>${round(route.coverage*100)}<small>%</small></strong></div><div class="metric-card"><span>거리 우선 경로 대비</span><strong>+${round(detour).toLocaleString()}<small>m</small></strong></div><div class="metric-card"><span>모델상 조명 근접 영향</span><strong>${round(route.proximity*100)}<small>%</small></strong></div></div>`+
+          `<p class="result-desc">도착점에서 도로망 노드까지 약 ${round(comparison.endSnapDistance)}m, 출발점에서 도로망 노드까지 약 ${round(comparison.startSnapDistance)}m 이격. 이 간격은 제시된 경로 거리와 소요시간에 포함되지 않으며 실제 보행 연결이 아닙니다.</p>`+
+          coverageWarning(route)+'<p class="warn">조명시설 근접률은 거리 가정에 따른 모델값이며 실제 lux·점등 상태나 개인 안전을 뜻하지 않습니다. OSM 태그와 보행 가능 여부는 현장 검증 전까지 보장되지 않습니다.</p>';
+      }
+      function previewDestination(index){
+        selectedIndex=index;
+        const route=index===0?comparison.shortest:comparison.bright;
+        const other=index===0?comparison.bright:comparison.shortest;
+        drawRoute(route,null,null,comparison.samePath?[]:[other]);
+        $('result-title').textContent='⌖ 자유 도착지 · 경로 비교';
+        const optionList=[{title:'거리 우선 (최단)',route:comparison.shortest},{title:'조명 근접도 우선',route:comparison.bright}].map((item,i)=>
+          `<button type="button" class="route-choice ${selectedIndex===i?'chosen':''}" data-dest-choice="${i}" aria-pressed="${selectedIndex===i}"><strong>${i===0?'➤':'✦'} ${item.title} ${selectedIndex===i?'✓':''}</strong><small>${item.route.minutes.toFixed(1)}분 · ${round(item.route.distance)}m · 조명 근접 ${round(item.route.coverage*100)}%</small></button>`).join('');
+        $('result-body').innerHTML=`<p class="result-desc">같은 출발점·목적지를 OSM 보행 후보망으로 비교합니다. 조명 우선 경로는 거리 우선 대비 최대 35% 우회하는 가정이며, 여러 후보 중 평가한 결과입니다. ${comparison.samePath?'두 계산이 동일한 경로를 선택했으므로 실제로는 하나의 경로만 표시됩니다.':'선택된 코스는 민트색, 다른 대안은 회색 점선으로 표시됩니다.'}</p>`+
+          `<div class="route-choices destination-choices">${optionList}</div><div class="route-actions"><button type="button" class="route-confirm" id="confirm-destination-route">✓ ${selectedIndex===0?'거리 우선':'조명 우선'} 경로 선택</button></div>`+destinationStats(route);
+        $('result-body').scrollTop=0;
+        for(const button of $('result-body').querySelectorAll('[data-dest-choice]'))button.onclick=()=>previewDestination(Number(button.dataset.destChoice));
+        $('confirm-destination-route').onclick=confirmDestination;
+        setResultCollapsed(false);$('results').hidden=false;
+      }
+      function confirmDestination(){
+        const route=selectedIndex===0?comparison.shortest:comparison.bright;
+        drawRoute(route); // Only selected path; destinationLayer retains destination marker.
+        $('result-title').textContent='✓ 자유 도착지 경로 선택 완료';
+        $('result-body').innerHTML=`<div class="confirmed-route"><strong>⌖ ${selectedIndex===0?'거리 우선':'조명 근접도 우선'} · 경로 확정</strong><p>선택한 경로만 지도에 유지됩니다. 다른 경로를 다시 비교하려면 선택을 취소하고, 경로를 없애려면 「경로 지우기」를 누르세요.</p><button id="cancel-destination-selection" type="button" class="route-cancel">↶ 선택 취소 · 경로 다시 비교</button></div>`+destinationStats(route);
+        $('result-body').scrollTop=0;
+        $('cancel-destination-selection').onclick=()=>previewDestination(selectedIndex);
+        setResultCollapsed(false);$('results').hidden=false;
+      }
+      previewDestination(selectedIndex);
+      status(`자유 도착지 경로 비교 완료 · ${comparison.samePath?'두 방식이 같은 길을 선택했어요':'두 경로를 비교할 수 있어요'} · 실제 조도 아님`);
     }
   }catch(e){showError(e.message||String(e));}finally{$('recommend').disabled=false;}
 }
