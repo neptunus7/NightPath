@@ -1,9 +1,20 @@
-# GitHub Pages 시연판 업로드 안내
+# GitHub Pages 시연판 운영 안내
 
-- **메인 NIGHTPATH v0.8.13.0 소스와 동일한 HTML/CSS, 기존 경로 계산 및 광원 렌더링 모듈을 기반으로 합니다.** 데이터 파일과 로딩 경로·출처 문구만 공개용으로 변경했습니다.
-- `docs/index.html`, `docs/app.mjs`, `docs/style.css`, `docs/routing.mjs`, `docs/light_canvas.mjs`, `docs/free_destination.mjs`, `docs/store_hours.mjs`, `docs/store_recommendations.mjs`, `docs/data/*` (ODbL OSM 1개 + 합성 JSON 3개), `.nojekyll`, `PAGES_DATA_LICENSE.md`를 경로 그대로 저장소에 올리세요.
-- GitHub 저장소 **Settings → Pages → Build and deployment → Deploy from a branch → main /docs → Save**.
-- 배포 후 GitHub Pages 주소는 **GitHub가 설정 화면에 실제로 제공한 URL을 확인**하세요. 주소를 미리 확정해서 주장하지 않습니다.
-- 지도 타일·Leaflet CDN 로딩에 인터넷이 필요합니다. 모바일과 데스크톱 둘 다 열리지만 보행 후보망과 밝기 점수는 현장 검증 결과가 아닙니다.
-- 기존 `nowon` 코드와 실데이터 없는 공개 저장소 파일은 건드리지 마세요. 메인 README 변경도 필수가 아닙니다.
-- **안전 문구:** 실제 OSM 도로·편의점 기록을 이용하며 조명과 안심시설은 가상입니다. 지도 위 가상 광원의 위치와 실제 도로 환경은 일치하지 않을 수 있습니다.
+**현재 배포:** NIGHTPATH v0.8.13.0 · https://neptunus7.github.io/NightPath/ · 데스크톱 브라우저 최적화
+
+- 페이지 시작 파일: `docs/index.html`
+- GitHub 설정: `Settings → Pages → Deploy from a branch → main /docs`
+- 시연판 코드: `docs/app.mjs`, `docs/style.css`, `docs/routing.mjs`, `docs/light_canvas.mjs`, `docs/free_destination.mjs` 등
+- 공개 데이터: `docs/data/osm_nowon.json` (실제 OSM · ODbL 1.0)과 **합성 조명 2개 JSON + 합성 안심 1개 JSON**
+- 지도 바탕 타일과 Leaflet은 외부에서 불러오므로 인터넷 연결이 필요합니다.
+- 기존 `nowon/`은 로컬 연구용 코드 구조를 보관한 폴더입니다. 실제 정부 조명 위치와 로컬 자료는 공개 저장소에 올리지 않았습니다.
+- 지도 위 빛 효과는 실제 밝기나 점등 여부를 뜻하지 않습니다. 경로 추천은 안전한 보행을 보장하지 않습니다.
+
+## 업데이트 전 필수 확인
+
+1. `python scripts/audit_public_repo.py`와 자동 테스트를 실행합니다.
+2. `docs/PAGES_DATA_LICENSE.md`, `docs/DATA_POLICY.md`의 출처·공개 범위가 실제 데이터와 맞는지 확인합니다.
+3. 비밀키·NGII 원본 및 NGII 추출 좌표·사적인 정보가 포함되지 않았는지 직접 재검사합니다.
+4. README 이미지·웹 데모 링크가 열리고, 경로 추천이 의도대로 작동하는지 브라우저에서 확인합니다.
+
+`docs/.nojekyll` 파일은 현재 배포에 필수는 아니며, 실제 저장소에 존재하지 않습니다.

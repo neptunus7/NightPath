@@ -1,28 +1,37 @@
-# GitHub 업로드 전 반드시 수행할 점검
+# GitHub 공개 저장소 — 최종 배포 점검
 
-이 폴더는 사용자가 업로드할 수 있도록 만든 **공개 검토용 패키지**입니다. 자동으로 GitHub 저장소가 생성되거나 게시된 상태가 아닙니다.
+**대상:** NIGHTPATH v0.8.13.0 · GitHub Pages 시연판. **현재 상태: 이미 공개 배포된 저장소**입니다. 이 문서는 업로드 전과 **수정 커밋 전**에 모두 적용합니다.
 
-1. **ZIP을 별도 새 폴더에 압축 해제**합니다. 기존 NIGHTPATH 실행용 ZIP 전체를 복사하지 마세요.
-2. 터미널에서 `python scripts/audit_public_repo.py`를 실행해 데이터 확장자·보호 경로·비정상 파일 추가가 없는지 검사합니다.
-3. `node --test tests/*.test.mjs`와 `python -m unittest discover -s tests -p 'test_*.py'`를 실행합니다(실제 로컬 공간정보가 없는 공개 검증의 범위).
-4. 새 **빈 GitHub 저장소**를 만듭니다. **이전 로컬 프로젝트의 `.git` 디렉터리/커밋 기록을 복사하지 않습니다.** 과거 커밋에 좌표가 있었다면 `.gitignore`로 해결되지 않습니다.
-5. 압축 해제된 파일들만 새 저장소로 옮깁니다. `nowon/data/.gitkeep` 외에는 실제 데이터 파일이 없어야 합니다. `src/`, `versions/`, `raw_data/`, 스크린샷, ZIP 자체, API 키 없음 확인.
-6. `git add .` 후 반드시 `git status --short` 및 `git diff --cached --name-only`로 모든 경로를 확인합니다. `git add -f`, GitHub 웹 업로드, ZIP/Release 첨부는 보호 검사 우회 위험이 있습니다.
-7. 코드 공개 라이선스 MIT와 OSM/Leaflet/NGII 각각의 조건을 혼동하지 않았는지 README와 `docs/DATA_POLICY.md`를 함께 공개합니다.
-8. GitHub Pages/Actions나 라이브 데모 호스팅은 **기본적으로 만들지 않습니다.** 데이터/지도 서버·타일 정책과 재배포 범위를 별도 확인하고 나서 결정합니다.
-9. 국토지리정보원/관련기관의 **국외반출 및 가공 좌표 재배포 답변**이 도착하기 전 NGII 관련 `json`, `geojson`, `shp` 등을 수동 업로드하지 않습니다. 비공개 저장소 역시 자동 허용이 아님을 기억하세요.
-10. 프로젝트를 공개하는 최종 권한과 저작권 표기 내용은 사용자 본인이 확인해 결정합니다.
+## 1. 공개 가능 범위 확인
 
-### 참고 명령
+- [ ] `docs/index.html` 및 `docs/app.mjs`와 UI 모듈은 공개 시연판에 필요한 소스인지 확인
+- [ ] `docs/data/osm_nowon.json`은 **실제 OSM 데이터**이고 ODbL 출처·고지가 유지되는지 확인
+- [ ] 합성 조명 2개 JSON, 합성 시설 1개 JSON은 `_synthetic: true` 등 합성 표시가 있는지 확인
+- [ ] NGII 수치지도 원본·추출 실좌표, IoT 실좌표, 2022 실제 안심시설 좌표를 GitHub에 게시하지 않았는지 확인
+- [ ] README 대표 이미지에 실제 데모 화면/© OSM 표시가 보이는지 확인
+- [ ] `.env`, API 비밀키, 개인 신상·주소, 사적 기록, 과거 로컬 데이터 ZIP/HTML 미포함 확인
+
+## 2. 변경 파일 확인 및 테스트
 
 ```bash
 python scripts/audit_public_repo.py
 node --test tests/*.test.mjs
 python -m unittest discover -s tests -p 'test_*.py'
-# 아래는 저장소 새로 만들고 모든 파일을 직접 확인한 다음에만!
-git init
-git add .
-git diff --cached --name-only
+node examples/synthetic_route_demo.mjs
 ```
 
-`git push` 전에는 README의 개인 경험 공개 수준도 함께 확인하세요.
+모든 검사는 프로젝트 루트에서 실행합니다. 자체 검사기 통과는 법적 공개 승인·실데이터 무혼입의 완전한 증거가 아닙니다. 누가 어떤 실좌표를 어디서 얻었는지는 별도 출처 기록으로 확인해야 합니다.
+
+## 3. 배포 확인
+
+- [ ] GitHub Pages 설정은 `main /docs`이고, `https://neptunus7.github.io/NightPath/` 링크가 열리는지 확인
+- [ ] 데스크톱에서 지도·광원 시각화·산책 코스·자유 도착지 기능 동작 확인
+- [ ] 모바일 접속 가능 여부와 PC 최적화 안내 표시 확인
+- [ ] 실제 조명·조도·안전 보장으로 오인할 문구가 없는지 확인
+- [ ] `README.md`, `docs/DATA_POLICY.md`, `docs/PAGES_DATA_LICENSE.md`의 배포 정보가 일치하는지 확인
+
+## 4. Git 기록과 최종 책임
+
+GitHub Download ZIP은 **현재 파일 상태**만 담고 과거 Git 커밋 이력은 담지 않습니다. 이전에 실좌표·비밀키를 커밋한 적이 있는지는 Git 이력을 별도로 검토해야 합니다. `.gitignore`는 새 추가를 막는 설정일 뿐, 이미 올라간 기록을 지우지 않습니다.
+
+국토지리정보원 실제 좌표의 공개 재배포·국외반출 가능 여부는 기관 확인 전까지 보류합니다. 데이터 공개에 대한 최종 결정은 원자료 이용조건과 관련 법규를 확인한 후 진행합니다.
