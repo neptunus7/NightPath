@@ -25,6 +25,7 @@
 *.tif
 *.tiff
 *.png
+!nightpath-readme-screenshot.png
 *.jpg
 *.jpeg
 *.webp
